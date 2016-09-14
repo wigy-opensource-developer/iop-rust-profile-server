@@ -1,0 +1,7 @@
+[package]
+name = "iop_home_d"
+version = "0.1.0"
+authors = ["Wigy <wigy_opensource_developer@yahoo.com>"]
+
+[dependencies]
+mio = "0.6"
