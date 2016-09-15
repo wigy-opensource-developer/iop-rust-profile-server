@@ -4,4 +4,6 @@ version = "0.1.0"
 authors = ["Wigy <wigy_opensource_developer@yahoo.com>"]
 
 [dependencies]
+log = "0.3"
+env_logger = "0.3"
 mio = "0.6"

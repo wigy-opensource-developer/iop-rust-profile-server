@@ -1,3 +1,0 @@
-[submodule "iop_home_d/message-protocol"]
-	path = iop_home_d/message-protocol
-	url = ../../Internet-of-People/message-protocol.git

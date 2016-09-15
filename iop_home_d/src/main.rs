@@ -1,3 +1,6 @@
+#[macro_use]
+extern crate log;
+extern crate env_logger;
 extern crate mio;
 
 use std::io::prelude::*;
@@ -7,7 +10,9 @@ use mio::tcp::TcpListener;
 const SERVER: Token = Token(0);
 
 fn main() {
-    println!("Opening port 3000");
+    env_logger::init().unwrap();
+
+    info!("Opening port 3000");
     let addr = "0.0.0.0:3000".parse().unwrap();
     let server = TcpListener::bind(&addr).unwrap();
     let poll = Poll::new().unwrap();
@@ -19,7 +24,9 @@ fn main() {
         for event in events.iter() {
             match event.token() {
                 SERVER => {
-                    let (mut stream, _) = server.accept().unwrap();
+                    info!("Accepting connection on port 3000");
+                    let (mut stream, peer_addr) = server.accept().unwrap();
+                    debug!("Connection from {:?}", peer_addr);
                     stream.write_fmt(format_args!("Hello, World!")).unwrap();
                 }
                 _ => {
