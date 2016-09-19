@@ -11,10 +11,12 @@ pub fn main() {
 
     let port1 = Port::new("0.0.0.0:3000").unwrap();
     let port2 = Port::new("127.0.0.1:3001").unwrap();
+    let port3 = Port::new("[::]:3002").unwrap();
 
     let mut reactor = Reactor::new().unwrap();
     reactor.register(Box::new(port1)).unwrap();
     reactor.register(Box::new(port2)).unwrap();
+    reactor.register(Box::new(port3)).unwrap();
 
     reactor.run();
 }
