@@ -1,8 +1,8 @@
-use std::io::prelude::*;
 use mio::{Token,Poll,Event,PollOpt,Ready};
 use mio::tcp::TcpListener;
 use reactor::*;
 use error::Result;
+use connection::Connection;
 
 #[derive(Debug)]
 pub struct Port {
@@ -15,7 +15,9 @@ impl Port {
         info!("Binding port {}", addr);
         let server = try!(TcpListener::bind(&addr));
 
-        let result = Port { server: server };
+        let result = Port {
+            server: server,
+        };
         Ok(result)
     }
 }
@@ -25,12 +27,14 @@ impl Reactive for Port {
         try!(poll.register(&self.server, token, Ready::readable(), PollOpt::edge()));
         Ok(())
     }
-    fn act(&mut self, _: &Event) -> Result<()>
+    fn act(&self, _: Event) -> Result<()>
     {
         info!("Accepting connection on {}", try!(self.server.local_addr()));
-        let (mut stream, peer_addr) = try!(self.server.accept());
+        let (stream, peer_addr) = try!(self.server.accept());
         debug!("Connection from {:?}", peer_addr);
-        try!(write!(&mut stream, "Hello, World!"));
+
+        let mut connection = Connection::new(stream);
+        try!(connection.write());
         Ok(())
     }
 }

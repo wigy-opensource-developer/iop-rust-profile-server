@@ -5,7 +5,7 @@ use error::Result;
 pub trait Reactive
 {
     fn register(&self, poll: &Poll, token: Token) -> Result<()>;
-    fn act(&mut self, event: &Event) -> Result<()>;
+    fn act(&self, event: Event) -> Result<()>;
 }
 
 pub struct Reactor {
@@ -39,11 +39,10 @@ impl Reactor {
         loop {
             self.poll.poll(&mut events, None).unwrap();
             for event in events.iter() {
-                if let Some(reactive) = self.reactives_by_token.get_mut(&event.token()) {
-                    (*reactive).act(&event).unwrap();
+                if let Some(reactive) = self.reactives_by_token.get(&event.token()) {
+                    reactive.act(event).unwrap();
                 }
             }
         }
-
     }
 }
