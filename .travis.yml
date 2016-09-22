@@ -9,3 +9,4 @@ matrix:
   allow_failures:
   - rust: nightly
 sudo: false
+before_script: cd iop_home_d
