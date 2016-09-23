@@ -1,8 +1,8 @@
+use connection::Connection;
+use error::Result;
 use mio::{Token,Poll,Event,PollOpt,Ready};
 use mio::tcp::TcpListener;
 use reactor::*;
-use error::Result;
-use connection::Connection;
 
 #[derive(Debug)]
 pub struct Port {

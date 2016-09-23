@@ -1,7 +1,7 @@
-use std::net;
-use std::io;
-use std::fmt;
 use std::error::Error as StdError;
+use std::fmt;
+use std::io;
+use std::net;
 use std::result::Result as StdResult;
 
 #[derive(Debug)]

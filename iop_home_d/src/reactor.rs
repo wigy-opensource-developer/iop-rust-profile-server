@@ -1,6 +1,8 @@
-use std::collections::HashMap;
-use mio::*;
 use error::Result;
+use mio::*;
+use std::cell::RefCell;
+use std::collections::HashMap;
+use std::rc::Rc;
 
 pub trait Reactive
 {
@@ -10,7 +12,7 @@ pub trait Reactive
 
 pub struct Reactor {
     next_token: usize,
-    reactives_by_token: HashMap<Token, Box<Reactive>>,
+    reactives_by_token: HashMap<Token, Rc<RefCell<Reactive>>>,
     poll: Poll,
 }
 
@@ -23,11 +25,11 @@ impl Reactor {
         };
         Ok(result)
     }
-    pub fn register(&mut self, reactive: Box<Reactive>) -> Result<()> {
+    pub fn register(&mut self, reactive: Rc<RefCell<Reactive>>) -> Result<()> {
         let t = self.next_token;
         self.next_token = t + 1;
         let token = Token(t);
-        try!((*reactive).register(&self.poll, token));
+        try!(reactive.borrow_mut().register(&self.poll, token));
 
         let old_reactive = self.reactives_by_token.insert(token, reactive);
         debug_assert!(old_reactive.is_none());
@@ -40,7 +42,7 @@ impl Reactor {
             self.poll.poll(&mut events, None).unwrap();
             for event in events.iter() {
                 if let Some(reactive) = self.reactives_by_token.get(&event.token()) {
-                    reactive.act(event).unwrap();
+                    reactive.borrow_mut().act(event).unwrap();
                 }
             }
         }

@@ -1,6 +1,6 @@
-use std::io::prelude::*;
-use mio::tcp::TcpStream;
 use error::Result;
+use mio::tcp::TcpStream;
+use std::io::prelude::*;
 
 #[derive(Debug)]
 pub struct Connection {
