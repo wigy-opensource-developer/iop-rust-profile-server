@@ -5,6 +5,7 @@ extern crate mio;
 
 use connection::Connection;
 use port::Port;
+use reactor::ReactiveSet;
 use reactor::Reactor;
 use std::cell::RefCell;
 use std::rc::Rc;
