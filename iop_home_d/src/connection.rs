@@ -1,7 +1,8 @@
-use error::Result;
+use error::{Error,Result};
 use mio::{Token,Poll,PollOpt,Ready};
 use mio::tcp::TcpStream;
 use reactor::{Reactive,ReactiveSet};
+use std::io::ErrorKind;
 use std::io::prelude::*;
 use std::str;
 
@@ -31,11 +32,12 @@ impl Reactive for Connection {
             let mut buf = [0u8; 1024];
             let mut read = String::new();
             loop {
-                let read_bytes = try!(self.stream.read(&mut buf));
-                if read_bytes == 0 {
-                    break;
+                let result = self.stream.read(&mut buf);
+                match result {
+                    Ok(read_bytes) => read.push_str(try!(str::from_utf8(&buf[..read_bytes]))),
+                    Err(ref e) if e.kind() == ErrorKind::WouldBlock => break,
+                    Err(e) => return Err(Error::Io(e)),
                 }
-                read.push_str(try!(str::from_utf8(&buf[..read_bytes])));
             }
             info!("read: {}", read);
         }
