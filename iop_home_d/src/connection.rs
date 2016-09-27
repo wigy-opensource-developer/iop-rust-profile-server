@@ -1,5 +1,5 @@
 use error::{Error,Result};
-use mio::{Token,Poll,PollOpt,Ready};
+use mio::{Token,PollOpt,Ready};
 use mio::tcp::TcpStream;
 use reactor::{Reactor,Reactive};
 use std::io::ErrorKind;
@@ -22,9 +22,9 @@ impl Connection {
 }
 
 impl Reactive for Connection {
-    fn register(&self, poll: &Poll, token: Token) -> Result<()> {
-        try!(poll.register(&self.stream, token, Ready::readable(), PollOpt::edge()));
-        Ok(())
+    fn register(&self, reactor: &mut Reactor) -> Result<Token> {
+        let token = try!(reactor.add(&self.stream, Ready::readable(), PollOpt::edge()));
+        Ok(token)
     }
     fn act(&mut self, ready: Ready, _: &mut Reactor) -> Result<()> {
         info!("Got an event {:?}", &ready);

@@ -6,7 +6,7 @@ use std::rc::Rc;
 
 pub trait Reactive
 {
-    fn register(&self, poll: &Poll, token: Token) -> Result<()>;
+    fn register(&self, reactor: &mut Reactor) -> Result<Token>;
     fn act(&mut self, ready: Ready, reactor: &mut Reactor) -> Result<()>;
 }
 
@@ -26,24 +26,21 @@ impl Reactor {
         Ok(result)
     }
 
-    pub fn add(&mut self, reactive: Rc<RefCell<Reactive>>, evented: &Evented, kind: Ready, opt: PollOpt) -> Result<()>
+    pub fn add(&mut self, evented: &Evented, kind: Ready, opt: PollOpt) -> Result<Token>
     {
         let token = self.create_token();
         try!(self.poll.register(evented, token, kind, opt));
 
-        let old_reactive = self.reactives_by_token.insert(token, reactive);
-        debug_assert!(old_reactive.is_none());
-        
-        Ok(())
+        Ok(token)
     }
 
     pub fn register(&mut self, reactive: Rc<RefCell<Reactive>>) -> Result<()> {
-        let token = self.create_token();
-        try!(reactive.borrow_mut().register(&self.poll, token));
+
+        let token = try!(reactive.borrow_mut().register(self));
 
         let old_reactive = self.reactives_by_token.insert(token, reactive);
         debug_assert!(old_reactive.is_none());
-
+        
         Ok(())
     }
 
@@ -59,9 +56,7 @@ impl Reactor {
                 }
             }
             for (reactive, kind) in action_needed {
-                let mut x = reactive.borrow_mut();
-                let result = x.act(kind, self);
-                result.unwrap();
+                reactive.borrow_mut().act(kind, self).unwrap();
             }
         }
     }

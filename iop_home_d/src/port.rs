@@ -1,6 +1,6 @@
 use connection::Connection;
 use error::Result;
-use mio::{Token,Poll,PollOpt,Ready};
+use mio::{Token,PollOpt,Ready};
 use mio::tcp::TcpListener;
 use reactor::*;
 use std::cell::RefCell;
@@ -25,9 +25,9 @@ impl Port {
 }
 
 impl Reactive for Port {
-    fn register(&self, poll: &Poll, token: Token) -> Result<()> {
-        try!(poll.register(&self.server, token, Ready::readable(), PollOpt::edge()));
-        Ok(())
+    fn register(&self, reactor: &mut Reactor) -> Result<Token> {
+        let token = try!(reactor.add(&self.server, Ready::readable(), PollOpt::edge()));
+        Ok(token)
     }
     fn act(&mut self, _: Ready, reactor: &mut Reactor) -> Result<()>
     {
