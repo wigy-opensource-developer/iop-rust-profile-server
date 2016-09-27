@@ -1,7 +1,7 @@
 use error::{Error,Result};
 use mio::{Token,Poll,PollOpt,Ready};
 use mio::tcp::TcpStream;
-use reactor::{Reactive,ReactiveSet};
+use reactor::{Reactor,Reactive};
 use std::io::ErrorKind;
 use std::io::prelude::*;
 use std::str;
@@ -26,7 +26,7 @@ impl Reactive for Connection {
         try!(poll.register(&self.stream, token, Ready::readable(), PollOpt::edge()));
         Ok(())
     }
-    fn act(&mut self, ready: Ready, _: &mut ReactiveSet) -> Result<()> {
+    fn act(&mut self, ready: Ready, _: &mut Reactor) -> Result<()> {
         info!("Got an event {:?}", &ready);
         if ready.is_readable() {
             let mut buf = [0u8; 1024];

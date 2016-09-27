@@ -7,32 +7,13 @@ use std::rc::Rc;
 pub trait Reactive
 {
     fn register(&self, poll: &Poll, token: Token) -> Result<()>;
-    fn act(&mut self, ready: Ready, set: &mut ReactiveSet) -> Result<()>;
-}
-
-pub trait ReactiveSet
-{
-    fn register(&mut self, reactive: Rc<RefCell<Reactive>>) -> Result<()>;
+    fn act(&mut self, ready: Ready, reactor: &mut Reactor) -> Result<()>;
 }
 
 pub struct Reactor {
     next_token: usize,
     reactives_by_token: HashMap<Token, Rc<RefCell<Reactive>>>,
     poll: Poll,
-}
-
-impl ReactiveSet for Reactor {
-    fn register(&mut self, reactive: Rc<RefCell<Reactive>>) -> Result<()> {
-        let t = self.next_token;
-        self.next_token = t + 1;
-        let token = Token(t);
-        try!(reactive.borrow_mut().register(&self.poll, token));
-
-        let old_reactive = self.reactives_by_token.insert(token, reactive);
-        debug_assert!(old_reactive.is_none());
-
-        Ok(())
-    }
 }
 
 impl Reactor {
@@ -43,6 +24,27 @@ impl Reactor {
             poll: try!(Poll::new()),
         };
         Ok(result)
+    }
+
+    pub fn add(&mut self, reactive: Rc<RefCell<Reactive>>, evented: &Evented, kind: Ready, opt: PollOpt) -> Result<()>
+    {
+        let token = self.create_token();
+        try!(self.poll.register(evented, token, kind, opt));
+
+        let old_reactive = self.reactives_by_token.insert(token, reactive);
+        debug_assert!(old_reactive.is_none());
+        
+        Ok(())
+    }
+
+    pub fn register(&mut self, reactive: Rc<RefCell<Reactive>>) -> Result<()> {
+        let token = self.create_token();
+        try!(reactive.borrow_mut().register(&self.poll, token));
+
+        let old_reactive = self.reactives_by_token.insert(token, reactive);
+        debug_assert!(old_reactive.is_none());
+
+        Ok(())
     }
 
     pub fn run(&mut self) -> ! {
@@ -58,9 +60,15 @@ impl Reactor {
             }
             for (reactive, kind) in action_needed {
                 let mut x = reactive.borrow_mut();
-                let result = x.act(kind, self as &mut ReactiveSet);
+                let result = x.act(kind, self);
                 result.unwrap();
             }
         }
+    }
+
+    fn create_token(&mut self) -> Token {
+        let t = self.next_token;
+        self.next_token = t + 1;
+        Token(t)
     }
 }
