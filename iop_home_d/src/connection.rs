@@ -9,6 +9,29 @@ use std::io::prelude::*;
 use std::str;
 
 #[derive(Debug)]
+pub struct Connection (Rc<RefCell<_Connection>>);
+
+impl Connection {
+    pub fn new(stream: TcpStream) -> Connection {
+        Connection( Rc::new(RefCell::new(_Connection { stream : stream })) )
+    }
+    pub fn write(&mut self) -> Result<()> {
+        try!(write!(&mut self.0.borrow_mut().stream, "Hello, World!"));
+        Ok(())
+    }
+    pub fn register(&self, reactor: &mut Reactor) -> Result<()> {
+        let this : Rc<RefCell<_Connection>> = self.0.clone();
+        try!(reactor.add(
+            &self.0.borrow().stream,
+            Ready::readable(),
+            PollOpt::edge(),
+            move |kind, reactor| this.borrow_mut().act(kind, reactor))
+        );
+        Ok(())
+    }
+}
+
+#[derive(Debug)]
 struct _Connection {
     stream: TcpStream,
 }
@@ -38,24 +61,6 @@ impl _Connection {
         // if ready.is_hup() {
             
         // }
-        Ok(())
-    }
-}
-
-#[derive(Debug)]
-pub struct Connection (Rc<RefCell<_Connection>>);
-
-impl Connection {
-    pub fn new(stream: TcpStream) -> Connection {
-        Connection( Rc::new(RefCell::new(_Connection { stream : stream })) )
-    }
-    pub fn write(&mut self) -> Result<()> {
-        try!(write!(&mut self.0.borrow_mut().stream, "Hello, World!"));
-        Ok(())
-    }
-    pub fn register(&self, reactor: &mut Reactor) -> Result<()> {
-        let this : Rc<RefCell<_Connection>> = self.0.clone();
-        try!(reactor.add(&self.0.borrow().stream, Ready::readable(), PollOpt::edge(), move |kind, reactor| this.borrow_mut().act(kind, reactor)));
         Ok(())
     }
 }

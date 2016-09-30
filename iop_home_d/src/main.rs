@@ -3,23 +3,27 @@ extern crate log;
 extern crate env_logger;
 extern crate mio;
 
-use error::Result;
 use port::Port;
 use reactor::Reactor;
 
-pub fn add_port(reactor: &mut Reactor, addr: &str) -> Result<()> {
-    let port = try!(Port::new(addr));
-    try!(port.register(reactor));
-    Ok(())
+trait ReactorExtensions {
+    fn bind_port(&mut self, addr: &str);
+}
+
+impl ReactorExtensions for Reactor {
+    fn bind_port(&mut self, addr: &str) {
+        let port = Port::bind(addr).unwrap();
+        port.register(self).unwrap();
+    }
 }
 
 pub fn main() {
     env_logger::init().unwrap();
 
     let mut reactor = Reactor::new().unwrap();
-    add_port(&mut reactor, "0.0.0.0:3000").unwrap();
-    add_port(&mut reactor, "127.0.0.1:3001").unwrap();
-    add_port(&mut reactor, "[::]:3002").unwrap();
+    reactor.bind_port("0.0.0.0:3000");
+    reactor.bind_port("127.0.0.1:3001");
+    reactor.bind_port("[::]:3002");
 
     reactor.run();
 }
