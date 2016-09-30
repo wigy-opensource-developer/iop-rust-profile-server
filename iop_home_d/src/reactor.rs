@@ -1,18 +1,13 @@
 use error::Result;
 use mio::*;
-use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
-pub trait Reactive
-{
-    fn register(&self, reactor: &mut Reactor) -> Result<Token>;
-    fn act(&mut self, ready: Ready, reactor: &mut Reactor) -> Result<()>;
-}
+type Reaction = Rc<Fn(Ready, &mut Reactor) -> Result<()>>;
 
 pub struct Reactor {
     next_token: usize,
-    reactives_by_token: HashMap<Token, Rc<RefCell<Reactive>>>,
+    reactives_by_token: HashMap<Token, Reaction>,
     poll: Poll,
 }
 
@@ -26,37 +21,30 @@ impl Reactor {
         Ok(result)
     }
 
-    pub fn add(&mut self, evented: &Evented, kind: Ready, opt: PollOpt) -> Result<Token>
+    pub fn add<R>(&mut self, evented: &Evented, kind: Ready, opt: PollOpt, reaction: R) -> Result<Token>
+        where R : Fn(Ready, &mut Reactor) -> Result<()> + 'static
     {
         let token = self.create_token();
         try!(self.poll.register(evented, token, kind, opt));
 
-        Ok(token)
-    }
-
-    pub fn register(&mut self, reactive: Rc<RefCell<Reactive>>) -> Result<()> {
-
-        let token = try!(reactive.borrow_mut().register(self));
-
-        let old_reactive = self.reactives_by_token.insert(token, reactive);
-        debug_assert!(old_reactive.is_none());
+        let old_reaction = self.reactives_by_token.insert(token, Rc::new(reaction));
+        debug_assert!(old_reaction.is_none());
         
-        Ok(())
+        Ok(token)
     }
 
     pub fn run(&mut self) -> ! {
         let mut events = Events::with_capacity(1024);
         loop {
             self.poll.poll(&mut events, None).unwrap();
-            let mut action_needed : Vec<(Rc<RefCell<Reactive>>, Ready)> = Vec::new();
+            let mut action_needed : Vec<(Reaction, Ready)> = Vec::new();
             for event in events.iter() {
-                let maybe_reactive : Option<&Rc<RefCell<Reactive>>> = self.reactives_by_token.get(&event.token());
-                if let Some(reactive) = maybe_reactive {
+                if let Some(reactive) = self.reactives_by_token.get(&event.token()) {
                     action_needed.push((reactive.clone(), event.kind()));
                 }
             }
             for (reactive, kind) in action_needed {
-                reactive.borrow_mut().act(kind, self).unwrap();
+                reactive(kind, self).unwrap();
             }
         }
     }

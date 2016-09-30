@@ -1,31 +1,19 @@
 use error::{Error,Result};
-use mio::{Token,PollOpt,Ready};
+use mio::{PollOpt,Ready};
 use mio::tcp::TcpStream;
-use reactor::{Reactor,Reactive};
+use reactor::Reactor;
+use std::rc::Rc;
+use std::cell::RefCell;
 use std::io::ErrorKind;
 use std::io::prelude::*;
 use std::str;
 
 #[derive(Debug)]
-pub struct Connection {
+struct _Connection {
     stream: TcpStream,
 }
 
-impl Connection {
-    pub fn new(stream: TcpStream) -> Connection {
-        Connection { stream : stream }
-    }
-    pub fn write(&mut self) -> Result<()> {
-        try!(write!(&mut self.stream, "Hello, World!"));
-        Ok(())
-    }
-}
-
-impl Reactive for Connection {
-    fn register(&self, reactor: &mut Reactor) -> Result<Token> {
-        let token = try!(reactor.add(&self.stream, Ready::readable(), PollOpt::edge()));
-        Ok(token)
-    }
+impl _Connection {
     fn act(&mut self, ready: Ready, _: &mut Reactor) -> Result<()> {
         info!("Got an event {:?}", &ready);
         if ready.is_readable() {
@@ -50,6 +38,24 @@ impl Reactive for Connection {
         // if ready.is_hup() {
             
         // }
+        Ok(())
+    }
+}
+
+#[derive(Debug)]
+pub struct Connection (Rc<RefCell<_Connection>>);
+
+impl Connection {
+    pub fn new(stream: TcpStream) -> Connection {
+        Connection( Rc::new(RefCell::new(_Connection { stream : stream })) )
+    }
+    pub fn write(&mut self) -> Result<()> {
+        try!(write!(&mut self.0.borrow_mut().stream, "Hello, World!"));
+        Ok(())
+    }
+    pub fn register(&self, reactor: &mut Reactor) -> Result<()> {
+        let this : Rc<RefCell<_Connection>> = self.0.clone();
+        try!(reactor.add(&self.0.borrow().stream, Ready::readable(), PollOpt::edge(), move |kind, reactor| this.borrow_mut().act(kind, reactor)));
         Ok(())
     }
 }

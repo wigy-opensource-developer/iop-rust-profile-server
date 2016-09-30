@@ -6,13 +6,10 @@ extern crate mio;
 use error::Result;
 use port::Port;
 use reactor::Reactor;
-use std::cell::RefCell;
-use std::rc::Rc;
 
 pub fn add_port(reactor: &mut Reactor, addr: &str) -> Result<()> {
     let port = try!(Port::new(addr));
-    let ref_port = Rc::new(RefCell::new(port));
-    try!(reactor.register(ref_port));
+    try!(port.register(reactor));
     Ok(())
 }
 
