@@ -1,6 +1,6 @@
 # Home node - Rust implementation
 
-[![Build Status](https://travis-ci.org/Fermat-ORG/rust-home-node.svg?branch=master)](https://travis-ci.org/Fermat-ORG/rust-home-node)
+[![Build Status](https://travis-ci.org/Fermat-ORG/rust-iop-profile-server.svg?branch=master)](https://travis-ci.org/Fermat-ORG/rust-iop-profile-server)
 
 Internet of People is a public infrastructure for enabling people to find each
 other, connect to each other and exchange information between each other without
