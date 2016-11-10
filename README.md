@@ -1,3 +1,5 @@
+![alt text](https://raw.githubusercontent.com/Fermat-ORG/media-kit/00135845a9d1fbe3696c98454834efbd7b4329fb/MediaKit/Logotype/fermat_logo_3D/Fermat_logo_v2_readme_1024x466.png "Fermat Logo")
+
 # Home node - Rust implementation
 
 [![Build Status](https://travis-ci.org/Fermat-ORG/rust-iop-profile-server.svg?branch=master)](https://travis-ci.org/Fermat-ORG/rust-iop-profile-server)
